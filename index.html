@@ -1,0 +1,224 @@
+
+
+<!DOCTYPE html>
+<html>
+  <head>
+   <link href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet">
+   <link href="style.css" rel="stylesheet">
+   <link href='http://fonts.googleapis.com/css?family=Lobster' rel='stylesheet' type='text/css'>
+
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script> 
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="papaparse.min.js" charset="utf-8"></script>
+  </head>
+
+  <body>
+    <h1>Points!</h1>
+    <h2>A d3.js X/Y coordinate visualizer</h2>
+
+
+    <div class="rightdiv">
+      <h3>Do you want to...?</h3>
+      <p>
+        <button type="button" id="random" class="btn btn-primary btn-lg btn-block"  onclick="generateViz();">
+          <span class="glyphicon glyphicon-star"></span> Generate a random data set
+        </button>
+
+      </p>
+      <p>  
+        <button type="button" class="btn btn-primary btn-lg btn-block dropdown-toggle" onclick="parseData();">
+          <span class="glyphicon glyphicon-star"></span> Generate a data set from a CSV
+          <ul class="dropdown-menu" role="menu">
+            <li>Forest Data</li>
+          </ul>
+        </button>
+      </p>
+      <h3>Upload a new CSV to parse</h3>
+      <p>
+        <div class="input-group input-group-lg">
+          <input type="text" id="csvParse" class="form-control" placeholder="Enter URL to CSV">
+          <span class="input-group-btn">
+            <button class="btn btn-primary" type="button" onclick="csvUpload()">Upload!</button>
+          </span>
+        </div>  
+      </p>
+      <h3>Enter equation to graph</h3>
+      <p>
+        <div class="input-group input-group-lg">
+          <span class="input-group-addon">y =</span>
+          <input type="text" id="equation" class="form-control" placeholder="Enter equation here">
+          <span class="input-group-btn">
+            <button class="btn btn-primary" type="button" onclick="equationGenerator()">Go!</button>
+          </span>
+        </div>  
+      </p>    
+    </div>
+
+
+    <script>
+
+      // unchanging board set up
+      var width = 800;
+      var height = 800;
+      var gridSpacing = 20;
+      var numCircles = 100;  // will be defined by user
+      var generated = false;
+       
+
+      var svg = d3.select("body").append("svg")
+        .attr("width",width)
+        .attr("height",height)
+        .style("align","center");
+
+      // Drawing the grid lines using pathes
+      svg.append("path")
+        .attr("class","grid")
+        .attr("d",function() {
+          var d = "";
+       
+          for (var i = gridSpacing; i < width; i += gridSpacing ) {
+            d += "M"+i+",0 L"+i+","+height;
+          }
+       
+          for (var i = gridSpacing; i < height; i += gridSpacing ) {
+            d += "M0,"+i+" L"+width+","+i;
+          }
+
+          return d;
+        });
+       
+      // Using path to draw x axis
+      svg.append("path")
+        .attr("class","axis")
+        .attr("d","M0,"+height/2+" L"+width+","+height/2);
+       
+      // Using path to draw y axis
+      svg.append("path")
+        .attr("class","axis")
+        .attr("d","M"+width/2+",0 L"+width/2+","+height);
+          
+    
+      // *** // PARSE DATA // *** //
+    
+      var generateViz = function(data) { 
+
+          if(generated){
+            svg.selectAll("circle")
+              .remove();
+          }  
+          
+          if (data === undefined){
+            // rando data
+            var dataset = [];
+            for (var i = 0; i < numCircles; i++){
+              dataset.push([Math.floor(Math.random() * (350 - -350) + -350), Math.floor(Math.random() * (350 - -350) + -350)]);
+            }
+          } else {
+            // data from CSV
+            var dataset = data;
+          }
+
+          // find range of data
+          var arrX = Object.keys(dataset).map(function(key){ return dataset[key][0]; });
+          var arrY = Object.keys(dataset).map(function(key){ return dataset[key][1]; });
+          var minX = Math.min.apply(null, arrX);
+          var maxX = Math.max.apply(null, arrX);
+          var minY = Math.min.apply(null, arrY);
+          var maxY = Math.max.apply(null, arrY);
+
+          var rangeX = Math.abs(minX) < Math.abs(maxX) ? Math.abs(maxX) + 2 : Math.abs(minX) + 2;
+          var rangeY = Math.abs(minY) < Math.abs(maxY) ? Math.ceil(Math.abs(maxY)) + 2 : Math.ceil(Math.abs(minY)) + 2;
+          var dataRange = rangeX < rangeY ? rangeY : rangeX;
+          // var radius = dataRange < 50 ? 5 : 10;
+          var radius = 6;
+
+          // if(dataRange < 50){
+          //   console.log(dataset.length, "LENGTH");
+          //   console.log(dataset[0], "DATASET");
+          //   for(var j = 0; j < dataset.length; j++){
+          //     dataset[j][0] = (dataset[j][0]) * 4;
+          //     dataset[j][1] = (dataset[j][1]) * 4;
+          //   }
+          //   dataRange =  dataRange * 2.5;
+          // }
+
+          console.log(dataRange, "TOTAL RANGE");
+
+          console.log(minX, "min X");
+          console.log(maxX, "max X");
+          console.log(minY, "min Y");
+          console.log(maxY, "max Y");   
+
+
+           // Apply data range to generate relative scales for circle positions
+          var x = d3.scale.linear().domain([-dataRange,dataRange]).range([0,width]);
+          var y = d3.scale.linear().domain([-dataRange,dataRange]).range([height,0]);
+
+          for(var key in dataset){
+            svg.append('circle')
+              .data(dataset)
+              .attr('r', radius)
+              .attr("cx", function(data){
+                return x(dataset[key][0]);
+              })  
+              .attr("cy", function(data){
+                return y(dataset[key][1]);
+              })  
+              .style("fill", "steelblue")
+              .style("stroke", "black")
+          }
+
+          generated = true;
+        
+      };
+
+       var parseData = function(url, callBack) {
+        // var url = "http://radsaucedev.azurewebsites.net/box.csv";
+        // var callBack = generateViz;
+        Papa.parse(url, {
+            worker: true,
+            download: true,
+            dynamicTyping: true,
+            complete: function(results) {
+                callBack(results.data);
+            }
+        });
+      };
+
+      var csvUpload = function(){
+        var url = $("#csvParse").val();
+        parseData(url, generateViz);
+      };
+
+      var equationGenerator = function(){
+        var equation = $("#equation").val();
+        var equData = [];
+        var y;
+        for(var x = 0; x < 100; x++){
+          y = eval(equation);
+          if(x === 0 || x % 2 === 0){
+            equData.push([x, y]);
+          }  
+        }
+        generateViz(equData);
+
+      }  
+
+
+      // OPTIONAL LABELS FOR LATER
+      //Add a label
+      //would need to use .getBBox() to make sure this doesn't hit the sides
+      // items.append("text")
+      //   .attr("x",function(d){
+      //     return x(d.x);
+      //   })
+      //   .attr("y",function(d){
+      //     return y(d.y);
+      //   })
+      //   .attr("dy","1.25em")
+      //   .attr("text-anchor","middle")
+
+    </script> 
+  </body>
+</html> 
