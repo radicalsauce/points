@@ -1,0 +1,56 @@
+body {
+  background-color: #333333;
+  margin-left: 50px;
+  margin-right: 50px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+h1 {
+  color: #fff;
+  font-size: 70px;
+  font-family: 'Lobster', cursive;
+  text-align: center;
+}
+
+h2 {
+  font-size:40px;
+  color: #fff;
+  padding-bottom: 20px;
+  text-align: center;
+}
+
+h3 {
+  font-size:20px;
+  color: #fff;
+  padding-bottom: 20px;
+  text-align: center;
+}
+
+.rightdiv {
+  width: 30%;
+  float: right;
+}
+   
+.grid {
+  stroke-width: 0.5px;
+  stroke: #fff;
+  fill: none;
+   opacity: 0.5;  
+}
+ 
+.axis {
+  stroke-width: 3px;
+  stroke: #fff;
+  fill: none;
+}
+ 
+g.item circle {
+  fill: steelblue;
+  stroke: #000;
+}
+ 
+svg {
+  border: 1px solid #000;
+  background-color: #333
+}
